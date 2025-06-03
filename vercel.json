@@ -1,8 +1,6 @@
 {
-"version": 2,
+  "version": 2,
   "functions": {
-    "api/**": {
-      "runtime": "edge"
-    }
+    "api/*.ts": { "runtime": "nodejs20.x" }
   }
 }
