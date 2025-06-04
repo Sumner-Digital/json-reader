@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { load } from 'cheerio';
-import type {Element as CheerioElement } from 'cheerio';
+// Remove the Element import - it's not needed and causing the error
 
 export const runtime = 'edge';
 
@@ -45,8 +45,10 @@ export async function GET(request: NextRequest): Promise<Response> {
     const $ = load(html);
     const jsonBlocks: string[] = [];
 
-    $('script[type="application/ld+json"]').each((_idx: number, el: CheerioElement) => {
-      const content = $(el).html();
+    // Fixed: Use proper callback parameters - index is first, element is second
+    // The element parameter is already a DOM element, not a CheerioElement
+    $('script[type="application/ld+json"]').each((index, element) => {
+      const content = $(element).html();
       if (content) jsonBlocks.push(content.trim());
     });
 
