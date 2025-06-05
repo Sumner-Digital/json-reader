@@ -2,21 +2,23 @@
   "name": "structured-data-checker",
   "version": "0.1.0",
   "private": true,
- "scripts": {
+  "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start"
   },
   "dependencies": {
+    "cheerio": "^1.0.0",
+    "lucide-react": "^0.513.0",
     "next": "^15.3.3",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "cheerio": "^1.0.0"
+    "react18-json-view": "^0.2.9"
   },
   "devDependencies": {
-    "typescript": "^5.8.3",
     "@types/node": "^22.15.29",
     "@types/react": "^19.1.6",
-    "@types/react-dom": "^19.1.5"
+    "@types/react-dom": "^19.1.5",
+    "typescript": "^5.8.3"
   }
 }
