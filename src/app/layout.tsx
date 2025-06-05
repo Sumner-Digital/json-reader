@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useLayoutEffect } from 'react';
 
-const ALLOWED_ORIGIN = 'https://websitehq.com';   // parent site
+const ALLOWED_ORIGIN = '*';   // allow any parent; parent will validate
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  useEffect(() => {
+  useLayoutEffect(() => {
     const pushHeight = () =>
       window.parent.postMessage(
         { type: 'APP_HEIGHT', height: document.documentElement.scrollHeight },
