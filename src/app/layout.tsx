@@ -1,24 +1,25 @@
-'use client'; 
+'use client';
 
 import { useEffect } from 'react';
 
+const ALLOWED_ORIGIN = 'https://websitehq.com';   // parent site
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
-    const postHeight = () =>
-      window.parent?.postMessage(
+    const pushHeight = () =>
+      window.parent.postMessage(
         { type: 'APP_HEIGHT', height: document.documentElement.scrollHeight },
-        '*'
+        ALLOWED_ORIGIN
       );
 
-    postHeight();                              // initial
-    window.addEventListener('resize', postHeight);
-
-    // Watch for DOM size changes (JSON expands/collapses)
-    const ro = new ResizeObserver(postHeight);
+    // send once + on every size change
+    pushHeight();
+    window.addEventListener('resize', pushHeight);
+    const ro = new ResizeObserver(pushHeight);     // catches JSON accordion toggles
     ro.observe(document.documentElement);
 
     return () => {
-      window.removeEventListener('resize', postHeight);
+      window.removeEventListener('resize', pushHeight);
       ro.disconnect();
     };
   }, []);
@@ -26,6 +27,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>{children}</body>
-    </html >
+    </html>
   );
 }
