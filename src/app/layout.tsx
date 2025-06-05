@@ -1,56 +1,67 @@
 'use client';
 
-import { useLayoutEffect } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 
-/**
- * Root layout that reports its body height to the parent page exactly
- * once per animation frame and only when the height changes by ≥ 5 px.
- * This throttling stops the classic “postMessage ↔ reflow” infinite loop.
- */
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const lastHeightRef = useRef(0);
+  const rafRef        = useRef<number | null>(null);
+
   useLayoutEffect(() => {
-    const body = document.getElementById('app-body') as HTMLElement | null;
-    if (!body) return;
+    // 1. Grab a dedicated, margin-free wrapper
+    const container = document.getElementById('app-body') as HTMLElement | null;
+    if (!container) return;
 
-    let last = 0;                 // last height sent
-    let rafId: number | null = null;
+    // 2. Inline CSS to zero-out default margins & avoid collapse ✔
+    container.style.margin = '0';
 
-    const calc = () => body.getBoundingClientRect().height | 0;
+    // 3. Calc function: uses getBoundingClientRect to drop decimals
+    const calcHeight = () => container.getBoundingClientRect().height | 0;
 
-    const send = () => {
-      rafId = null;
-      const h = calc();
-      if (Math.abs(h - last) >= 5) {            // ignore ≤ 4 px jitters
-        last = h;
-        window.parent.postMessage({ type: 'APP_HEIGHT', height: h }, '*');
+    // 4. Send only when ≥ 5px difference
+    const sendHeight = () => {
+      rafRef.current = null;
+      const newH = calcHeight();
+      if (Math.abs(newH - lastHeightRef.current) >= 5) {
+        lastHeightRef.current = newH;
+        window.parent.postMessage({ type: 'APP_HEIGHT', height: newH }, '*');
       }
     };
 
-    const queue = () => {
-      if (rafId == null) rafId = requestAnimationFrame(send);
+    // 5. Queue on next animation frame if none pending
+    const queueUpdate = () => {
+      if (rafRef.current == null) {
+        rafRef.current = requestAnimationFrame(sendHeight);
+      }
     };
 
-    // first paint
-    queue();
+    // 6. Observe only child-content mutations (DOM, attributes, subtree)
+    const mo = new MutationObserver(queueUpdate);
+    mo.observe(container, {
+      childList:   true,
+      subtree:     true,
+      attributes:  true,
+      characterData: true
+    });
 
-    // watch any DOM change inside the body
-    const ro = new ResizeObserver(queue);
-    ro.observe(body);
+    // 7. Also queue on window resize
+    window.addEventListener('resize', queueUpdate);
 
-    // viewport resize fallback
-    window.addEventListener('resize', queue);
+    // 8. Fire once initially
+    queueUpdate();
 
     return () => {
-      window.removeEventListener('resize', queue);
-      ro.disconnect();
-      if (rafId != null) cancelAnimationFrame(rafId);
+      window.removeEventListener('resize', queueUpdate);
+      mo.disconnect();
+      if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
     };
   }, []);
 
   return (
     <html lang="en">
-      {/* inline margin reset to avoid collapsed 8 px body margin */}
-      <body id="app-body" style={{ margin: 0 }}>{children}</body>
+      {/* Give the parent a known hook to measure */}
+      <body id="app-body">
+        {children}
+      </body>
     </html>
   );
 }
