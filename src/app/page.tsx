@@ -241,7 +241,7 @@ const styles = `
   .json-value-array-truncated { color: #9ca3af; font-style: italic; }
 
   .main-container {
-    min-height: 100vh;
+    
     background: linear-gradient(to bottom, #f9fafb, #ffffff);
     padding: 2rem;
   }
