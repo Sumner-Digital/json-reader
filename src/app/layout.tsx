@@ -1,6 +1,6 @@
 'use client';
 
-// Load the iframe-resizer contentWindow script so it can respond
+// Load the iframe-resizer child script so it can respond
 // to the parent’s iFrameResize(...) calls.
 import 'iframe-resizer/js/iframeResizer.contentWindow';
 
