@@ -1,0 +1,56 @@
+// Test script to verify all shopping schemas are properly configured
+const { schemas, getSchemaForType } = require('./src/app/schemas/index.ts');
+
+console.log('Testing Shopping Schema Configurations...\n');
+
+// List of all shopping-related schemas
+const shoppingSchemas = [
+  'Product',
+  'ProductGroup',
+  'Organization',
+  'OnlineStore',
+  'Offer', 
+  'AggregateOffer',
+  'MerchantReturnPolicy',
+  'MemberProgram'
+];
+
+console.log('=== Direct Schema Checks ===');
+shoppingSchemas.forEach(schemaName => {
+  const directSchema = schemas[schemaName];
+  const resolvedSchema = getSchemaForType(schemaName);
+  
+  console.log(`\n${schemaName}:`);
+  console.log(`  - Direct schema exists: ${!!directSchema}`);
+  console.log(`  - Resolved schema: ${resolvedSchema === schemas.fallback ? 'fallback' : 'found'}`);
+  
+  if (resolvedSchema && resolvedSchema !== schemas.fallback) {
+    console.log(`  - Required properties: ${JSON.stringify(resolvedSchema.required || [])}`);
+    console.log(`  - Has properties: ${!!resolvedSchema.properties}`);
+    console.log(`  - Property count: ${Object.keys(resolvedSchema.properties || {}).length}`);
+  }
+});
+
+console.log('\n=== Special Type Handling ===');
+// Test array type handling
+const arrayTypeResult = getSchemaForType(['Product', 'Offer']);
+console.log(`Array type ['Product', 'Offer']: ${arrayTypeResult === schemas.Product ? 'Resolved to Product' : 'Other'}`);
+
+// Test OnlineStore resolution
+const onlineStoreResult = getSchemaForType('OnlineStore');
+console.log(`OnlineStore type: ${onlineStoreResult === schemas.Organization ? 'Resolved to Organization' : 'Other'}`);
+
+console.log('\n=== Schema Property Summary ===');
+Object.entries(schemas).forEach(([name, schema]) => {
+  if (shoppingSchemas.includes(name) || name === 'OnlineStore') {
+    const props = Object.keys(schema.properties || {});
+    console.log(`\n${name} properties (${props.length}):`);
+    if (props.length <= 10) {
+      console.log(`  ${props.join(', ')}`);
+    } else {
+      console.log(`  ${props.slice(0, 10).join(', ')}...`);
+    }
+  }
+});
+
+console.log('\n✅ Schema configuration test complete!');
