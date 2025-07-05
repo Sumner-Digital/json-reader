@@ -3,6 +3,7 @@
 import { useState, lazy, Suspense, useEffect, useCallback } from 'react';
 import { ChevronRight, ChevronDown, Code, Eye, Copy, Check, AlertCircle, AlertTriangle } from 'lucide-react';
 import type { ValidationResult } from '../utils/validator';
+import PropertyTooltip from './PropertyTooltip';
 
 const JsonLdValidator = lazy(() => import('./JsonLdValidator'));
 
@@ -611,6 +612,17 @@ export default function JsonCard({ block }: { block: string }) {
                 const pathErrors = getErrorsForPath(item.path);
                 const pathWarnings = getWarningsForPath(item.path);
 
+                // Extract the property name for tooltip
+                // For nested properties like "address.streetAddress", we want "streetAddress"
+                const propertyName = item.path.includes('.') 
+                  ? item.path.split('.').pop()! 
+                  : item.path.includes('[') 
+                  ? item.path.split('[')[0]
+                  : item.path || 'root';
+
+                // Check if this is a child property (has a dot in the path)
+                const isChildProperty = item.path.includes('.');
+
                 return (
                   <div
                     key={idx}
@@ -627,7 +639,16 @@ export default function JsonCard({ block }: { block: string }) {
                         </span>
                       )}
                       {!isExpandable && <span style={{ width: '20px', display: 'inline-block' }} />}
-                      <span className="json-key">{item.path || 'root'}</span>
+                      
+                      {/* Wrap property name with tooltip */}
+                      {isChildProperty || !item.path.includes('.') ? (
+                        <PropertyTooltip propertyName={propertyName}>
+                          <span className="json-key">{item.path || 'root'}</span>
+                        </PropertyTooltip>
+                      ) : (
+                        <span className="json-key">{item.path || 'root'}</span>
+                      )}
+                      
                       <span className="json-equals">=</span>
                       <span className={getValueClass(item.type)}>{item.value}</span>
                     </div>

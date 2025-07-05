@@ -8,6 +8,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@floating-ui/react": "^0.27.13",
     "ajv": "^8.17.1",
     "cheerio": "^1.0.0",
     "iframe-resizer": "^5.4.6",
