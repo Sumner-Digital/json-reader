@@ -31,7 +31,12 @@ export const schemaDocUrls: Record<string, string> = {
   MerchantReturnPolicy: "https://developers.google.com/search/docs/appearance/structured-data/merchant-return-policy",
   MemberProgram: "https://developers.google.com/search/docs/appearance/structured-data/loyalty-program",
   Offer: "https://developers.google.com/search/docs/appearance/structured-data/product#offers",
-  AggregateOffer: "https://developers.google.com/search/docs/appearance/structured-data/product#aggregate-offers"
+  AggregateOffer: "https://developers.google.com/search/docs/appearance/structured-data/product#aggregate-offers",
+  WebSite: "https://developers.google.com/search/docs/appearance/structured-data/sitelinks-searchbox",
+  WebPage: "https://schema.org/WebPage",
+  Person: "https://schema.org/Person",
+  ImageObject: "https://schema.org/ImageObject",
+  BreadcrumbList: "https://developers.google.com/search/docs/appearance/structured-data/breadcrumb"
 };
 
 export const schemas: Record<string, any> = {
@@ -1832,6 +1837,507 @@ export const schemas: Record<string, any> = {
     recommendedProperties: ["description", "author", "offers", "aggregateRating"]
   },
 
+  WebSite: {
+    $schema: "http://json-schema.org/draft-07/schema#",
+    type: "object",
+    required: ["@context", "@type"],
+    properties: {
+      "@context": schemaOrgContext,
+      "@type": { const: "WebSite" },
+      "@id": { type: "string" },
+      url: { type: "string" },
+      name: { type: "string" },
+      description: { type: "string" },
+      publisher: {
+        oneOf: [
+          { type: "string" },
+          {
+            type: "object",
+            properties: {
+              "@type": { 
+                oneOf: [
+                  { const: "Organization" },
+                  { const: "Person" }
+                ]
+              },
+              "@id": { type: "string" },
+              name: { type: "string" }
+            }
+          },
+          {
+            type: "object",
+            properties: {
+              "@id": { type: "string" }
+            }
+          }
+        ]
+      },
+      potentialAction: {
+        oneOf: [
+          {
+            type: "object",
+            properties: {
+              "@type": { const: "SearchAction" },
+              target: {
+                oneOf: [
+                  { type: "string" },
+                  {
+                    type: "object",
+                    properties: {
+                      "@type": { const: "EntryPoint" },
+                      urlTemplate: { type: "string" }
+                    }
+                  }
+                ]
+              },
+              "query-input": { type: "string" }
+            }
+          },
+          { type: "array", items: { type: "object" } }
+        ]
+      },
+      inLanguage: { type: "string" },
+      copyrightHolder: {
+        oneOf: [
+          { type: "string" },
+          {
+            type: "object",
+            properties: {
+              "@type": { 
+                oneOf: [
+                  { const: "Organization" },
+                  { const: "Person" }
+                ]
+              },
+              "@id": { type: "string" },
+              name: { type: "string" }
+            }
+          },
+          {
+            type: "object",
+            properties: {
+              "@id": { type: "string" }
+            }
+          }
+        ]
+      },
+      copyrightYear: { type: ["string", "number"] },
+      isAccessibleForFree: { type: "boolean" },
+      hasPart: {
+        oneOf: [
+          { type: "object" },
+          { type: "array", items: { type: "object" } }
+        ]
+      },
+      isPartOf: {
+        oneOf: [
+          { type: "object" },
+          { type: "array", items: { type: "object" } }
+        ]
+      },
+      alternateName: { type: "string" }
+    },
+    recommendedProperties: ["url", "name", "description", "publisher"]
+  },
+
+  WebPage: {
+    $schema: "http://json-schema.org/draft-07/schema#",
+    type: "object",
+    required: ["@context", "@type"],
+    properties: {
+      "@context": schemaOrgContext,
+      "@type": { 
+        oneOf: [
+          { const: "WebPage" },
+          { const: "ItemPage" },
+          { const: "AboutPage" },
+          { const: "ContactPage" },
+          { const: "CollectionPage" },
+          { const: "ProfilePage" },
+          { const: "SearchResultsPage" }
+        ]
+      },
+      "@id": { type: "string" },
+      url: { type: "string" },
+      name: { type: "string" },
+      description: { type: "string" },
+      breadcrumb: {
+        oneOf: [
+          { type: "string" },
+          {
+            type: "object",
+            properties: {
+              "@type": { const: "BreadcrumbList" },
+              "@id": { type: "string" },
+              itemListElement: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    "@type": { const: "ListItem" },
+                    position: { type: "number" },
+                    item: {
+                      oneOf: [
+                        { type: "string" },
+                        {
+                          type: "object",
+                          properties: {
+                            "@id": { type: "string" },
+                            name: { type: "string" }
+                          }
+                        }
+                      ]
+                    },
+                    name: { type: "string" }
+                  }
+                }
+              }
+            }
+          },
+          {
+            type: "object",
+            properties: {
+              "@id": { type: "string" }
+            }
+          }
+        ]
+      },
+      mainEntity: {
+        oneOf: [
+          { type: "string" },
+          { type: "object" },
+          {
+            type: "object",
+            properties: {
+              "@id": { type: "string" }
+            }
+          }
+        ]
+      },
+      primaryImageOfPage: {
+        oneOf: [
+          { type: "string" },
+          {
+            type: "object",
+            properties: {
+              "@type": { const: "ImageObject" },
+              "@id": { type: "string" },
+              url: { type: "string" },
+              contentUrl: { type: "string" },
+              width: { type: ["string", "number"] },
+              height: { type: ["string", "number"] },
+              caption: { type: "string" }
+            }
+          },
+          {
+            type: "object",
+            properties: {
+              "@id": { type: "string" }
+            }
+          }
+        ]
+      },
+      datePublished: { type: "string" },
+      dateModified: { type: "string" },
+      author: {
+        oneOf: [
+          { type: "string" },
+          {
+            type: "object",
+            properties: {
+              "@type": { 
+                oneOf: [
+                  { const: "Person" },
+                  { const: "Organization" }
+                ]
+              },
+              "@id": { type: "string" },
+              name: { type: "string" }
+            }
+          },
+          {
+            type: "object",
+            properties: {
+              "@id": { type: "string" }
+            }
+          }
+        ]
+      },
+      isPartOf: {
+        oneOf: [
+          { type: "string" },
+          {
+            type: "object",
+            properties: {
+              "@type": { const: "WebSite" },
+              "@id": { type: "string" },
+              name: { type: "string" }
+            }
+          },
+          {
+            type: "object",
+            properties: {
+              "@id": { type: "string" }
+            }
+          }
+        ]
+      },
+      inLanguage: { type: "string" },
+      potentialAction: {
+        oneOf: [
+          { type: "object" },
+          { type: "array", items: { type: "object" } }
+        ]
+      },
+      speakable: {
+        oneOf: [
+          {
+            type: "object",
+            properties: {
+              "@type": { const: "SpeakableSpecification" },
+              cssSelector: {
+                oneOf: [
+                  { type: "string" },
+                  { type: "array", items: { type: "string" } }
+                ]
+              },
+              xpath: {
+                oneOf: [
+                  { type: "string" },
+                  { type: "array", items: { type: "string" } }
+                ]
+              }
+            }
+          },
+          { type: "array", items: { type: "object" } }
+        ]
+      },
+      lastReviewed: { type: "string" },
+      reviewedBy: {
+        oneOf: [
+          { type: "string" },
+          {
+            type: "object",
+            properties: {
+              "@type": { 
+                oneOf: [
+                  { const: "Person" },
+                  { const: "Organization" }
+                ]
+              },
+              name: { type: "string" }
+            }
+          }
+        ]
+      },
+      image: {
+        oneOf: [
+          { type: "string" },
+          { type: "array", items: { type: "string" } },
+          {
+            type: "object",
+            properties: {
+              "@type": { const: "ImageObject" },
+              url: { type: "string" }
+            }
+          }
+        ]
+      }
+    },
+    recommendedProperties: ["url", "name", "description", "breadcrumb", "datePublished", "dateModified"]
+  },
+
+  Person: {
+    $schema: "http://json-schema.org/draft-07/schema#",
+    type: "object",
+    required: ["@context", "@type"],
+    properties: {
+      "@context": schemaOrgContext,
+      "@type": { const: "Person" },
+      "@id": { type: "string" },
+      name: { type: "string" },
+      givenName: { type: "string" },
+      familyName: { type: "string" },
+      additionalName: { type: "string" },
+      url: { type: "string" },
+      image: {
+        oneOf: [
+          { type: "string" },
+          { type: "array", items: { type: "string" } },
+          {
+            type: "object",
+            properties: {
+              "@type": { const: "ImageObject" },
+              url: { type: "string" }
+            }
+          }
+        ]
+      },
+      jobTitle: { type: "string" },
+      worksFor: {
+        oneOf: [
+          { type: "string" },
+          {
+            type: "object",
+            properties: {
+              "@type": { const: "Organization" },
+              name: { type: "string" }
+            }
+          }
+        ]
+      },
+      email: { type: "string" },
+      telephone: { type: "string" },
+      address: {
+        oneOf: [
+          { type: "string" },
+          {
+            type: "object",
+            properties: {
+              "@type": { const: "PostalAddress" },
+              streetAddress: { type: "string" },
+              addressLocality: { type: "string" },
+              addressRegion: { type: "string" },
+              postalCode: { type: "string" },
+              addressCountry: { type: "string" }
+            }
+          }
+        ]
+      },
+      sameAs: {
+        oneOf: [
+          { type: "string" },
+          { type: "array", items: { type: "string" } }
+        ]
+      },
+      description: { type: "string" },
+      birthDate: { type: "string" },
+      gender: { type: "string" },
+      nationality: {
+        oneOf: [
+          { type: "string" },
+          {
+            type: "object",
+            properties: {
+              "@type": { const: "Country" },
+              name: { type: "string" }
+            }
+          }
+        ]
+      },
+      affiliation: {
+        oneOf: [
+          { type: "string" },
+          {
+            type: "object",
+            properties: {
+              "@type": { const: "Organization" },
+              name: { type: "string" }
+            }
+          },
+          { type: "array", items: { type: "object" } }
+        ]
+      },
+      alumniOf: {
+        oneOf: [
+          { type: "string" },
+          {
+            type: "object",
+            properties: {
+              "@type": { 
+                oneOf: [
+                  { const: "Organization" },
+                  { const: "EducationalOrganization" }
+                ]
+              },
+              name: { type: "string" }
+            }
+          },
+          { type: "array", items: { type: "object" } }
+        ]
+      },
+      award: {
+        oneOf: [
+          { type: "string" },
+          { type: "array", items: { type: "string" } }
+        ]
+      },
+      knowsAbout: {
+        oneOf: [
+          { type: "string" },
+          { type: "array", items: { type: "string" } }
+        ]
+      },
+      knowsLanguage: {
+        oneOf: [
+          { type: "string" },
+          { type: "array", items: { type: "string" } }
+        ]
+      },
+      memberOf: {
+        oneOf: [
+          {
+            type: "object",
+            properties: {
+              "@type": { 
+                oneOf: [
+                  { const: "Organization" },
+                  { const: "ProgramMembership" }
+                ]
+              },
+              name: { type: "string" }
+            }
+          },
+          { type: "array", items: { type: "object" } }
+        ]
+      }
+    },
+    recommendedProperties: ["name", "url", "image", "jobTitle", "worksFor", "sameAs"]
+  },
+
+  BreadcrumbList: {
+    $schema: "http://json-schema.org/draft-07/schema#",
+    type: "object",
+    required: ["@context", "@type", "itemListElement"],
+    properties: {
+      "@context": schemaOrgContext,
+      "@type": { const: "BreadcrumbList" },
+      "@id": { type: "string" },
+      itemListElement: {
+        type: "array",
+        minItems: 1,
+        items: {
+          type: "object",
+          required: ["@type", "position"],
+          properties: {
+            "@type": { const: "ListItem" },
+            position: { type: "number" },
+            item: {
+              oneOf: [
+                { type: "string" },
+                {
+                  type: "object",
+                  properties: {
+                    "@id": { type: "string" },
+                    "@type": { type: "string" },
+                    name: { type: "string" },
+                    url: { type: "string" }
+                  }
+                }
+              ]
+            },
+            name: { type: "string" },
+            url: { type: "string" }
+          }
+        }
+      },
+      numberOfItems: { type: "number" },
+      name: { type: "string" },
+      description: { type: "string" }
+    },
+    recommendedProperties: []
+  },
+
   // Fallback schema for unknown types
   fallback: {
     $schema: "http://json-schema.org/draft-07/schema#",
@@ -1864,6 +2370,12 @@ export function getSchemaForType(type: string): any {
   // Article subtypes
   if (type === 'NewsArticle' || type === 'BlogPosting') {
     return schemas.Article;
+  }
+  
+  // WebPage subtypes
+  if (type === 'ItemPage' || type === 'AboutPage' || type === 'ContactPage' || 
+      type === 'CollectionPage' || type === 'ProfilePage' || type === 'SearchResultsPage') {
+    return schemas.WebPage;
   }
   
   // Handle arrays of types (e.g., ["Product", "Offer"])

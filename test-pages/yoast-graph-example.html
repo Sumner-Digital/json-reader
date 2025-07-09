@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test @graph Validation</title>
+</head>
+<body>
+    <h1>Test @graph JSON-LD Validation</h1>
+    <p>This page contains a typical Yoast SEO @graph structure for testing.</p>
+
+    <!-- This is what Yoast SEO typically outputs -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://example.com/#organization",
+          "name": "Example Company",
+          "url": "https://example.com",
+          "logo": {
+            "@type": "ImageObject",
+            "@id": "https://example.com/#logo",
+            "url": "https://example.com/logo.png",
+            "contentUrl": "https://example.com/logo.png",
+            "width": 220,
+            "height": 60,
+            "caption": "Example Company"
+          },
+          "image": {
+            "@id": "https://example.com/#logo"
+          },
+          "sameAs": [
+            "https://www.facebook.com/example",
+            "https://twitter.com/example",
+            "https://www.linkedin.com/company/example"
+          ]
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://example.com/#website",
+          "url": "https://example.com/",
+          "name": "Example Company Website",
+          "description": "The official website of Example Company",
+          "publisher": {
+            "@id": "https://example.com/#organization"
+          },
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": {
+              "@type": "EntryPoint",
+              "urlTemplate": "https://example.com/?s={search_term_string}"
+            },
+            "query-input": "required name=search_term_string"
+          },
+          "inLanguage": "en-US"
+        },
+        {
+          "@type": "ItemPage",
+          "@id": "https://example.com/products/awesome-widget/#webpage",
+          "url": "https://example.com/products/awesome-widget/",
+          "name": "Awesome Widget | Example Company",
+          "isPartOf": {
+            "@id": "https://example.com/#website"
+          },
+          "primaryImageOfPage": {
+            "@id": "https://example.com/products/awesome-widget/#primaryimage"
+          },
+          "datePublished": "2024-01-15T10:00:00+00:00",
+          "dateModified": "2024-12-28T15:30:00+00:00",
+          "description": "Check out our amazing Awesome Widget product",
+          "breadcrumb": {
+            "@id": "https://example.com/products/awesome-widget/#breadcrumb"
+          },
+          "inLanguage": "en-US",
+          "potentialAction": [
+            {
+              "@type": "ReadAction",
+              "target": ["https://example.com/products/awesome-widget/"]
+            }
+          ]
+        },
+        {
+          "@type": "BreadcrumbList",
+          "@id": "https://example.com/products/awesome-widget/#breadcrumb",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Home",
+              "item": "https://example.com/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Products",
+              "item": "https://example.com/products/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 3,
+              "name": "Awesome Widget"
+            }
+          ]
+        },
+        {
+          "@type": "Product",
+          "@id": "https://example.com/products/awesome-widget/#product",
+          "name": "Awesome Widget",
+          "image": [
+            "https://example.com/images/widget-1.jpg",
+            "https://example.com/images/widget-2.jpg",
+            "https://example.com/images/widget-3.jpg"
+          ],
+          "description": "The Awesome Widget is the most innovative widget on the market, featuring cutting-edge technology and premium materials.",
+          "sku": "AWW-001",
+          "mpn": "AWWMFG001",
+          "brand": {
+            "@type": "Brand",
+            "name": "Example Brand"
+          },
+          "offers": {
+            "@type": "Offer",
+            "@id": "https://example.com/products/awesome-widget/#offer",
+            "url": "https://example.com/products/awesome-widget/",
+            "priceCurrency": "USD",
+            "price": "99.99",
+            "priceValidUntil": "2025-12-31",
+            "itemCondition": "https://schema.org/NewCondition",
+            "availability": "https://schema.org/InStock",
+            "seller": {
+              "@id": "https://example.com/#organization"
+            }
+          },
+          "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "4.8",
+            "bestRating": "5",
+            "worstRating": "1",
+            "ratingCount": "142",
+            "reviewCount": "89"
+          },
+          "review": [
+            {
+              "@type": "Review",
+              "reviewRating": {
+                "@type": "Rating",
+                "ratingValue": "5",
+                "bestRating": "5"
+              },
+              "author": {
+                "@type": "Person",
+                "name": "Jane Smith"
+              },
+              "datePublished": "2024-11-20",
+              "reviewBody": "This widget exceeded all my expectations! Highly recommend."
+            }
+          ]
+        }
+      ]
+    }
+    </script>
+</body>
+</html>
