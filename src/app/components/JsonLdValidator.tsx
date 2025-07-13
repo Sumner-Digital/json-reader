@@ -1,20 +1,29 @@
 import { useEffect } from 'react';
 import { validateJsonLd } from '../utils/validator';
-import type { ValidationResult } from '../utils/validator';
+import type { ValidationResult, ValidationOptions } from '../utils/validator';
 
 interface JsonLdValidatorProps {
   jsonString: string;
   onValidationComplete: (result: ValidationResult) => void;
+  options?: ValidationOptions;
 }
 
 export default function JsonLdValidator({ 
   jsonString, 
-  onValidationComplete 
+  onValidationComplete,
+  options = {} 
 }: JsonLdValidatorProps) {
   useEffect(() => {
     const runValidation = async () => {
       try {
-        const result = await validateJsonLd(jsonString);
+        // Default: don't show recommended property warnings for @graph items
+        const validationOptions: ValidationOptions = {
+          checkRecommendedProperties: true,
+          checkHttpUrls: true,
+          graphItemsNeedRecommended: false,
+          ...options
+        };
+        const result = await validateJsonLd(jsonString, validationOptions);
         onValidationComplete(result);
       } catch (error) {
         console.error('Validation error:', error);
@@ -29,7 +38,7 @@ export default function JsonLdValidator({
     };
 
     runValidation();
-  }, [jsonString, onValidationComplete]);
+  }, [jsonString, onValidationComplete, options]);
 
   // This component doesn't render anything - it just runs validation
   return null;

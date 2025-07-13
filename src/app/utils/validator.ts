@@ -18,6 +18,12 @@ export interface ValidationResult {
   warnings: ValidationWarning[];
 }
 
+export interface ValidationOptions {
+  checkRecommendedProperties?: boolean;
+  checkHttpUrls?: boolean;
+  graphItemsNeedRecommended?: boolean;
+}
+
 /**
  * Convert Ajv error path to readable format
  */
@@ -99,7 +105,8 @@ async function validateEntity(
   entity: any,
   ajv: any,
   basePath: string = '',
-  jsonString: string
+  jsonString: string,
+  options: ValidationOptions = {}
 ): Promise<{ errors: ValidationError[], warnings: ValidationWarning[] }> {
   const errors: ValidationError[] = [];
   const warnings: ValidationWarning[] = [];
@@ -217,23 +224,36 @@ async function validateEntity(
     });
   }
   
-  // Always check for HTTP URLs regardless of schema validation
-  checkHttpUrls(entity, basePath, errors);
+  // Check for HTTP URLs if enabled (default: true)
+  if (options.checkHttpUrls !== false) {
+    checkHttpUrls(entity, basePath, errors);
+  }
 
-  // Always check for recommended properties (warnings)
-  const recommendedProps = getRecommendedProperties(typeString);
-  const docUrl = schemaDocUrls[typeString] || schemaDocUrls[type] || '';
-  
-  recommendedProps.forEach(prop => {
-    if (!entity[prop]) {
-      const learnMoreLink = docUrl ? ` - <a href="${docUrl}" target="_blank" style="color: blue; text-decoration: underline;">Learn more</a>` : '';
-      warnings.push({
-        path: basePath || 'root',
-        message: `Missing recommended property "${prop}"${learnMoreLink}`,
-        line: estimateLineNumber(jsonString, prop)
+  // Check for recommended properties if enabled (default: true)
+  if (options.checkRecommendedProperties !== false) {
+    // Skip recommended properties for @graph items unless explicitly enabled
+    const isGraphItem = basePath.startsWith('@graph[');
+    
+    // Detect if this is likely a reference node (only has @id, @type, and maybe a few other properties)
+    const entityKeys = Object.keys(entity).filter(k => !k.startsWith('@'));
+    const isReferenceNode = entity['@id'] && entityKeys.length <= 2;
+    
+    if ((!isGraphItem || options.graphItemsNeedRecommended === true) && !isReferenceNode) {
+      const recommendedProps = getRecommendedProperties(typeString);
+      const docUrl = schemaDocUrls[typeString] || schemaDocUrls[type] || '';
+      
+      recommendedProps.forEach(prop => {
+        if (!entity[prop]) {
+          const learnMoreLink = docUrl ? ` - <a href="${docUrl}" target="_blank" style="color: blue; text-decoration: underline;">Learn more</a>` : '';
+          warnings.push({
+            path: basePath || 'root',
+            message: `Missing recommended property "${prop}"${learnMoreLink}`,
+            line: estimateLineNumber(jsonString, prop)
+          });
+        }
       });
     }
-  });
+  }
 
   return { errors, warnings };
 }
@@ -242,7 +262,8 @@ async function validateEntity(
  * Main validation function
  */
 export async function validateJsonLd(
-  jsonString: string
+  jsonString: string,
+  options: ValidationOptions = {}
 ): Promise<ValidationResult> {
   const errors: ValidationError[] = [];
   const warnings: ValidationWarning[] = [];
@@ -288,13 +309,13 @@ export async function validateJsonLd(
         '@context': item['@context'] || parsed['@context']
       };
       
-      const result = await validateEntity(itemToValidate, ajv, itemPath, jsonString);
+      const result = await validateEntity(itemToValidate, ajv, itemPath, jsonString, options);
       errors.push(...result.errors);
       warnings.push(...result.warnings);
     }
   } else {
     // Single entity validation (non-graph)
-    const result = await validateEntity(parsed, ajv, '', jsonString);
+    const result = await validateEntity(parsed, ajv, '', jsonString, options);
     errors.push(...result.errors);
     warnings.push(...result.warnings);
   }

@@ -4,6 +4,7 @@ import { useState, lazy, Suspense, useEffect, useCallback } from 'react';
 import { ChevronRight, ChevronDown, Code, Eye, Copy, Check, AlertCircle, AlertTriangle } from 'lucide-react';
 import type { ValidationResult } from '../utils/validator';
 import PropertyTooltip from './PropertyTooltip';
+import { getSocialPlatform } from '../utils/socialPlatforms';
 
 const JsonLdValidator = lazy(() => import('./JsonLdValidator'));
 
@@ -13,9 +14,10 @@ const JsonLdValidator = lazy(() => import('./JsonLdValidator'));
 function flatten(
   node: unknown,
   prefix = '',
-  depth = 0
-): Array<{ path: string; value: string; type: string; depth: number }> {
-  const lines: Array<{ path: string; value: string; type: string; depth: number }> = [];
+  depth = 0,
+  expandedPaths: Set<string> = new Set()
+): Array<{ path: string; value: string; type: string; depth: number; isExpandable?: boolean; fullArray?: any[]; rawValue?: any }> {
+  const lines: Array<{ path: string; value: string; type: string; depth: number; isExpandable?: boolean; fullArray?: any[]; rawValue?: any }> = [];
 
   if (
     typeof node === 'string' ||
@@ -30,7 +32,7 @@ function flatten(
   }
 
   if (Array.isArray(node)) {
-    // If array of primitives → preview
+    // If array of primitives → preview or expanded view
     const primitives = node.filter(
       (v) =>
         typeof v === 'string' ||
@@ -39,16 +41,46 @@ function flatten(
         v === null
     );
     if (primitives.length === node.length) {
-      const preview = primitives.slice(0, 3).map(v => 
-        typeof v === 'string' ? `"${v}"` : String(v)
-      ).join(', ');
-      const suffix = node.length > 3 ? `, … (+${node.length - 3})` : '';
-      lines.push({ 
-        path: prefix, 
-        value: `[${preview}${suffix}]`, 
-        type: 'array-primitive',
-        depth 
-      });
+      const isExpanded = expandedPaths.has(prefix);
+      
+      if (isExpanded) {
+        // Show full array with each item on its own line
+        lines.push({ 
+          path: prefix, 
+          value: `Array (${node.length} items)`, 
+          type: 'array-primitive-expanded',
+          depth,
+          isExpandable: true,
+          fullArray: node
+        });
+        // Add each array item as a separate line
+        node.forEach((item, idx) => {
+          const value = typeof item === 'string' ? `"${item}"` : String(item);
+          const isUrl = typeof item === 'string' && 
+                       (item.startsWith('http://') || item.startsWith('https://'));
+          lines.push({
+            path: `${prefix}[${idx}]`,
+            value: value,
+            type: isUrl ? 'url' : typeof item === 'string' ? 'string' : typeof item || 'null',
+            depth: depth + 1,
+            rawValue: item
+          });
+        });
+      } else {
+        // Show preview with expand option
+        const preview = primitives.slice(0, 3).map(v => 
+          typeof v === 'string' ? `"${v}"` : String(v)
+        ).join(', ');
+        const suffix = node.length > 3 ? ` … ⊕ ${node.length - 3} more` : '';
+        lines.push({ 
+          path: prefix, 
+          value: `[${preview}${suffix}]`, 
+          type: 'array-primitive',
+          depth,
+          isExpandable: node.length > 3,
+          fullArray: node
+        });
+      }
       return lines;
     }
 
@@ -62,7 +94,7 @@ function flatten(
       });
       node.forEach((item, idx) => {
         const childPrefix = `${prefix}[${idx}]`;
-        lines.push(...flatten(item, childPrefix, depth + 1));
+        lines.push(...flatten(item, childPrefix, depth + 1, expandedPaths));
       });
     } else {
       lines.push({ 
@@ -98,7 +130,7 @@ function flatten(
     
     entries.forEach(([key, value]) => {
       const childPrefix = prefix ? `${prefix}.${key}` : key;
-      lines.push(...flatten(value, childPrefix, depth + (prefix ? 1 : 0)));
+      lines.push(...flatten(value, childPrefix, depth + (prefix ? 1 : 0), expandedPaths));
     });
     return lines;
   }
@@ -344,14 +376,39 @@ const styles = `
   }
 
   .json-value-string { color: #059669; }
+  .json-value-url { 
+    color: #2563eb; 
+    text-decoration: underline;
+    cursor: pointer;
+  }
+  .json-value-url:hover {
+    color: #1d4ed8;
+  }
   .json-value-number { color: #2563eb; }
   .json-value-boolean { color: #7c3aed; }
   .json-value-null { color: #9ca3af; }
   .json-value-array-primitive { color:rgb(24, 25, 27); }
+  .json-value-array-primitive.expandable { 
+    cursor: pointer; 
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-underline-offset: 3px;
+  }
+  .json-value-array-primitive.expandable:hover { 
+    color: #2563eb;
+    text-decoration-style: solid;
+  }
+  .json-value-array-primitive-expanded { color:rgb(49, 38, 38); font-weight: 600; }
   .json-value-array-complex { color:rgb(49, 38, 38); font-weight: 600; }
   .json-value-object { color: #4f46e5; font-weight: 600; }
   .json-value-object-truncated { color: #9ca3af; font-style: italic; }
   .json-value-array-truncated { color: #9ca3af; font-style: italic; }
+  
+  .json-expand-hint {
+    color: #6b7280;
+    font-weight: 500;
+    cursor: pointer;
+  }
 
   .json-inline-error {
     color: #dc2626;
@@ -423,7 +480,12 @@ export default function JsonCard({ block }: { block: string }) {
   const toggleAllPaths = (expand: boolean) => {
     if (expand) {
       const allPaths = flatData
-        .filter(item => item.type === 'array-complex' || item.type === 'object')
+        .filter(item => 
+          item.type === 'array-complex' || 
+          item.type === 'object' ||
+          (item.type === 'array-primitive' && item.isExpandable) ||
+          item.type === 'array-primitive-expanded'
+        )
         .map(item => item.path);
       setExpandedPaths(new Set(allPaths));
     } else {
@@ -431,7 +493,7 @@ export default function JsonCard({ block }: { block: string }) {
     }
   };
 
-  const flatData = flatten(parsed);
+  const flatData = flatten(parsed, '', 0, expandedPaths);
   
   const isChildOf = (child: string, parent: string) => {
     return child.startsWith(parent + '.') || child.startsWith(parent + '[');
@@ -599,7 +661,8 @@ export default function JsonCard({ block }: { block: string }) {
               {flatData.map((item, idx) => {
                 const isHidden = flatData.some((parent, parentIdx) => {
                   if (parentIdx >= idx) return false;
-                  if (parent.type === 'array-complex' || parent.type === 'object') {
+                  if (parent.type === 'array-complex' || parent.type === 'object' || 
+                      parent.type === 'array-primitive-expanded') {
                     return isChildOf(item.path, parent.path) && !expandedPaths.has(parent.path);
                   }
                   return false;
@@ -607,7 +670,9 @@ export default function JsonCard({ block }: { block: string }) {
 
                 if (isHidden) return null;
 
-                const isExpandable = item.type === 'array-complex' || item.type === 'object';
+                const isExpandable = item.type === 'array-complex' || item.type === 'object' || 
+                                   (item.type === 'array-primitive' && item.isExpandable) ||
+                                   item.type === 'array-primitive-expanded';
                 const isExpanded = expandedPaths.has(item.path);
                 const pathErrors = getErrorsForPath(item.path);
                 const pathWarnings = getWarningsForPath(item.path);
@@ -650,7 +715,33 @@ export default function JsonCard({ block }: { block: string }) {
                       )}
                       
                       <span className="json-equals">=</span>
-                      <span className={getValueClass(item.type)}>{item.value}</span>
+                      {(item.type === 'array-primitive' && item.isExpandable) ? (
+                        <span 
+                          className={`${getValueClass(item.type)} expandable`}
+                          onClick={() => togglePath(item.path)}
+                          title="Click to expand"
+                        >
+                          {item.value}
+                        </span>
+                      ) : item.type === 'url' ? (
+                        <span 
+                          className={getValueClass(item.type)}
+                          onClick={() => window.open(item.rawValue, '_blank')}
+                          title={`Open ${item.rawValue}`}
+                        >
+                          {(() => {
+                            if (item.rawValue && typeof item.rawValue === 'string') {
+                              const platform = getSocialPlatform(item.rawValue);
+                              if (platform) {
+                                return `${platform.icon} ${item.value}`;
+                              }
+                            }
+                            return item.value;
+                          })()}
+                        </span>
+                      ) : (
+                        <span className={getValueClass(item.type)}>{item.value}</span>
+                      )}
                     </div>
                     {pathErrors.map((error, eidx) => (
                       <div key={eidx} className="json-inline-error">

@@ -846,7 +846,7 @@ export const schemas: Record<string, any> = {
       serviceType: { type: "string" },
       tickerSymbol: { type: "string" }
     },
-    recommendedProperties: ["name", "url", "logo", "contactPoint", "sameAs"]
+    recommendedProperties: ["name"]
   },
 
   LocalBusiness: {
@@ -2351,46 +2351,93 @@ export const schemas: Record<string, any> = {
 };
 
 // Map of type names to schema keys (handles subtypes)
-export function getSchemaForType(type: string): any {
-  // Direct match
-  if (schemas[type]) {
-    return schemas[type];
-  }
-  
-  // Check if it's an Organization subtype
-  if (type === 'OnlineStore' || type.endsWith('Organization')) {
+export function getSchemaForType(type: any): any {
+  // Handle null/undefined
+  if (!type) {
+    console.warn('No @type found, using default Organization schema');
     return schemas.Organization;
   }
   
-  // Check if it's a LocalBusiness subtype
-  if (type.endsWith('Business') || type === 'ProfessionalService') {
-    return schemas.LocalBusiness;
-  }
-  
-  // Article subtypes
-  if (type === 'NewsArticle' || type === 'BlogPosting') {
-    return schemas.Article;
-  }
-  
-  // WebPage subtypes
-  if (type === 'ItemPage' || type === 'AboutPage' || type === 'ContactPage' || 
-      type === 'CollectionPage' || type === 'ProfilePage' || type === 'SearchResultsPage') {
-    return schemas.WebPage;
-  }
-  
-  // Handle arrays of types (e.g., ["Product", "Offer"])
+  // Handle array of types
   if (Array.isArray(type)) {
-    // Try to find a schema for the first type in the array
+    // Try each type until we find a match
     for (const t of type) {
-      const schema = getSchemaForType(t);
-      if (schema !== schemas.fallback) {
-        return schema;
+      if (typeof t === 'string') {
+        // Check for exact match first
+        if (schemas[t]) {
+          return schemas[t];
+        }
+        // Check for Organization subtypes
+        if (t.endsWith('Organization') || t === 'OnlineStore') {
+          return schemas.Organization;
+        }
+        // Check for LocalBusiness subtypes
+        if (t.endsWith('Business') || t === 'ProfessionalService') {
+          return schemas.LocalBusiness;
+        }
+        // Article subtypes
+        if (t === 'NewsArticle' || t === 'BlogPosting' || t.includes('Article')) {
+          return schemas.Article;
+        }
+        // WebPage subtypes
+        if (t === 'ItemPage' || t === 'AboutPage' || t === 'ContactPage' || 
+            t === 'CollectionPage' || t === 'ProfilePage' || t === 'SearchResultsPage') {
+          return schemas.WebPage;
+        }
+        // Event subtypes
+        if (t.endsWith('Event')) {
+          return schemas.Event;
+        }
       }
     }
   }
   
-  // Default fallback
-  return schemas.fallback;
+  // Handle string type
+  if (typeof type === 'string') {
+    // Direct match
+    if (schemas[type]) {
+      return schemas[type];
+    }
+    
+    // Check if it's an Organization subtype
+    if (type === 'OnlineStore' || type.endsWith('Organization')) {
+      return schemas.Organization;
+    }
+    
+    // Check if it's a LocalBusiness subtype
+    if (type.endsWith('Business') || type === 'ProfessionalService') {
+      return schemas.LocalBusiness;
+    }
+    
+    // Article subtypes
+    if (type === 'NewsArticle' || type === 'BlogPosting' || type.includes('Article')) {
+      return schemas.Article;
+    }
+    
+    // WebPage subtypes
+    if (type === 'ItemPage' || type === 'AboutPage' || type === 'ContactPage' || 
+        type === 'CollectionPage' || type === 'ProfilePage' || type === 'SearchResultsPage') {
+      return schemas.WebPage;
+    }
+    
+    // Event subtypes
+    if (type.endsWith('Event')) {
+      return schemas.Event;
+    }
+  }
+  
+  // Handle object type (rare but possible)
+  if (typeof type === 'object' && type['@id']) {
+    // Extract type from @id if possible
+    const typeId = type['@id'];
+    if (typeof typeId === 'string') {
+      const typeName = typeId.split('/').pop();
+      return getSchemaForType(typeName);
+    }
+  }
+  
+  console.warn(`Unknown @type format: ${JSON.stringify(type)}, using default schema`);
+  return schemas.Organization; // Default fallback
 }
 
 // Get recommended properties for a type
