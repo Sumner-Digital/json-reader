@@ -71,7 +71,7 @@ export async function GET(request: NextRequest): Promise<Response> {
         errorMessage = 'Rate limited (429). Too many requests. Please try again in a few minutes.';
         suggestion = 'retry_later';
       } else if (res.status === 401) {
-        errorMessage = 'Authentication required (401). This page requires login.';
+        errorMessage = 'Authentication required (401). This page requires a login.';
         suggestion = 'manual_input';
       }
       
