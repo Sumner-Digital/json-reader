@@ -1,0 +1,54 @@
+// Utility to extract JSON-LD from HTML string
+export function extractJsonLdFromHtml(html: string): string[] {
+  const jsonLdBlocks: string[] = [];
+  
+  // Regular expression to find all script tags with type="application/ld+json"
+  const scriptRegex = /<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+  
+  let match;
+  while ((match = scriptRegex.exec(html)) !== null) {
+    const jsonContent = match[1].trim();
+    if (jsonContent) {
+      try {
+        // Validate it's actual JSON
+        JSON.parse(jsonContent);
+        jsonLdBlocks.push(jsonContent);
+      } catch (e) {
+        // Skip invalid JSON blocks
+        console.warn('Found invalid JSON-LD block:', e);
+      }
+    }
+  }
+  
+  return jsonLdBlocks;
+}
+
+// Check if a URL is from the same origin
+export function isSameOrigin(url: string): boolean {
+  try {
+    const targetUrl = new URL(url);
+    const currentUrl = new URL(window.location.href);
+    return targetUrl.origin === currentUrl.origin;
+  } catch {
+    return false;
+  }
+}
+
+// Detect if we're likely to hit CORS issues
+export function willHaveCorsIssue(url: string): boolean {
+  // Same origin requests don't have CORS issues
+  if (isSameOrigin(url)) return false;
+  
+  // Check if the URL has CORS headers that might allow us
+  // This is a simplified check - in reality, we'd need to make a preflight request
+  const urlObj = new URL(url);
+  
+  // Some domains known to have permissive CORS
+  const permissiveDomains = [
+    'api.github.com',
+    'jsonplaceholder.typicode.com',
+    // Add more as you discover them
+  ];
+  
+  return !permissiveDomains.includes(urlObj.hostname);
+}
